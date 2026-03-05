@@ -1,0 +1,21 @@
+spdx\_python\_model.bindings package
+====================================
+
+Submodules
+----------
+
+spdx\_python\_model.bindings.v3\_0\_1 module
+--------------------------------------------
+
+.. automodule:: spdx_python_model.bindings.v3_0_1
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: spdx_python_model.bindings
+   :members:
+   :show-inheritance:
+   :undoc-members:

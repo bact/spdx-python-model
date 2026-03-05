@@ -1,0 +1,7 @@
+spdx_python_model
+=================
+
+.. toctree::
+   :maxdepth: 4
+
+   spdx_python_model

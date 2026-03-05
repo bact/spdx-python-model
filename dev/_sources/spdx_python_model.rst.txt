@@ -1,0 +1,29 @@
+spdx\_python\_model package
+===========================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   spdx_python_model.bindings
+
+Submodules
+----------
+
+spdx\_python\_model.version module
+----------------------------------
+
+.. automodule:: spdx_python_model.version
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: spdx_python_model
+   :members:
+   :show-inheritance:
+   :undoc-members:
