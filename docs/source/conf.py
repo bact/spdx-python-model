@@ -46,7 +46,7 @@ html_theme_options = {
     "navbar_end": ["version-switcher", "navbar-icon-links"],
     "switcher": {
         # The theme will fetch this JSON to populate the version dropdown.
-        "json_url": "https://spdx.github.io/spdx-python-model/versions.json",
+        "json_url": "https://bact.github.io/spdx-python-model/versions.json",
         # Match the current built version so the correct entry is selected
         "version_match": version,
     },
