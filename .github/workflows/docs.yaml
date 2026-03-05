@@ -10,10 +10,15 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   deploy-docs:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,106 +31,43 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Determine version
-        id: version
+      - name: Install dependencies
+        run: pip install .
+
+      - name: Install pdoc
+        run: pip install pdoc
+
+      - name: Get version
+        id: get_version
         run: |
           if [[ "${{ github.event_name }}" == "release" ]]; then
-            RAW="${{ github.event.release.tag_name }}"
-            echo "version=${RAW#v}" >> "$GITHUB_OUTPUT"
+            VERSION_RAW="${{ github.event.release.tag_name }}"
+            echo "VERSION=${VERSION_RAW#v}" >> $GITHUB_ENV
           else
-            echo "version=dev" >> "$GITHUB_OUTPUT"
+            echo "VERSION=dev" >> $GITHUB_ENV
           fi
 
-      - name: Install package and Sphinx
-        run: pip install . sphinx pydata-sphinx-theme
-
-      - name: Generate RST stubs
-        run: sphinx-apidoc -f -o docs/source src/spdx_python_model
-
-      - name: Build HTML docs
+      - name: Build docs
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: sphinx-build -b html docs/source docs/_build
-
-      - name: Set up gh-pages worktree
+          VERSION: ${{ env.VERSION }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Fetch the remote gh-pages branch if it exists
-          git fetch origin gh-pages:refs/remotes/origin/gh-pages 2>/dev/null || true
-
-          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
-            # Branch exists: check it out as a detached worktree to avoid branch conflicts
-            git worktree add --detach site origin/gh-pages
-          else
-            # Branch does not exist yet: create an orphan worktree
-            git worktree add --detach site HEAD
-            cd site
-            git checkout --orphan gh-pages
-            git rm -rf . > /dev/null 2>&1 || true
-            touch .nojekyll
-            cd ..
+          pdoc src/spdx_python_model -o docs
+          # Copy files to versioned/dev directory
+          mkdir -p "pages/${{ env.VERSION }}"
+          cp -r docs/* "pages/${{ env.VERSION }}/"
+          # Create an index.html to redirect to the dev docs
+          if [[ "${{ env.VERSION }}" == "dev" ]]; then
+            echo '<meta http-equiv="refresh" content="0; url=dev/" />' > pages/index.html
           fi
 
-      - name: Deploy version and rebuild site metadata
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          rm -rf "site/$VERSION"
-          mkdir -p "site/$VERSION"
-          cp -r docs/_build/. "site/$VERSION/"
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
-          touch site/.nojekyll
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: pages
 
-          # Rebuild versions.json and root redirect from all dirs in gh-pages
-          python3 << 'PYEOF'
-          import json, os, re
-          from pathlib import Path
-
-          BASE = "https://spdx.github.io/spdx-python-model"
-          site = Path("site")
-
-          def is_release_version(name):
-              return bool(re.match(r"^\d+\.\d+", name))
-
-          # Collect all versioned release dirs (semver-like names)
-          releases = sorted(
-              [d.name for d in site.iterdir() if d.is_dir() and is_release_version(d.name)],
-              key=lambda v: tuple(int(x) for x in re.findall(r"\d+", v)),
-              reverse=True,
-          )
-
-          # Releases listed newest-first
-          entries = [{"name": r, "version": r, "url": f"{BASE}/{r}/"} for r in releases]
-          entries.append({"name": "dev", "version": "dev", "url": f"{BASE}/dev/"})
-
-          (site / "versions.json").write_text(json.dumps(entries, indent=2) + "\n")
-
-          # Root index.html redirects to the latest release (or dev if none yet)
-          target = releases[0] if releases else "dev"
-          (site / "index.html").write_text(
-              f"""<!DOCTYPE html>
-          <html>
-            <head>
-              <meta http-equiv="refresh" content="0; url={target}/" />
-              <script>window.location.href = "{target}/";</script>
-            </head>
-            <body>
-              <p>Redirecting to <a href="{target}/">{target}</a>...</p>
-            </body>
-          </html>
-          """
-          )
-          PYEOF
-
-      - name: Commit and push to gh-pages
-        run: |
-          cd site
-          git add -A
-          if git diff --cached --quiet; then
-            echo "Nothing to publish."
-          else
-            git commit -m "docs: publish ${{ steps.version.outputs.version }}"
-            git push origin HEAD:gh-pages
-          fi
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
