@@ -45,7 +45,7 @@ jobs:
       - name: Build HTML docs
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: sphinx-build -b html docs/source docs/build
+        run: sphinx-build -b html docs/source docs/_build
 
       - name: Set up gh-pages worktree
         run: |
@@ -74,7 +74,7 @@ jobs:
         run: |
           rm -rf "site/$VERSION"
           mkdir -p "site/$VERSION"
-          cp -r docs/build/. "site/$VERSION/"
+          cp -r docs/_build/. "site/$VERSION/"
 
           touch site/.nojekyll
 
