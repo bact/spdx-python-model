@@ -35,20 +35,43 @@ a specific commit, replace `main` with the git commit SHA
 
 ### Install using local SPDX model files
 
-Set the `SHACL2CODE_SPDX_DIR` environment variable to a local directory to
-bypass network downloads during builds.
-The directory must follow this structure:
+To build using local SPDX model files instead of downloading them from
+<https://spdx.org>:
+
+1) Clone the repository:
+
+    ```shell
+    git clone https://github.com/spdx/spdx-python-model.git
+    cd spdx-python-model
+    ```
+
+2) Set the model directory:
+
+   Point `SHACL2CODE_SPDX_DIR` to your local files to bypass network downloads
+   during builds.
+
+   ```shell
+   export SHACL2CODE_SPDX_DIR=/path/to/models
+   ```
+
+3) Install:
+
+    ```shell
+    python3 -m pip install .
+    ```
+
+The local directory must be organized by SPDX version:
 
 ```text
-<SHACL2CODE_SPDX_DIR>/
+/path/to/models/
 └── v[VERSION]/
     ├── spdx-context.jsonld
     ├── spdx-json-serialize-annotations.ttl
     └── spdx-model.ttl
 ```
 
-Useful for pre-release versions lacking official URLs and
-for testing new SPDX models.
+This is ideal for testing new models or pre-release versions where official
+URLs are not yet live.
 
 ## Usage
 
