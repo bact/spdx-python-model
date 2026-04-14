@@ -49,13 +49,13 @@ addopts = [
 ]
 
 [[tool.hatch.build.hooks.build-scripts.scripts]]
-out_dir = "src/spdx_python_model/bindings"
+out_dir = "src/spdx_python_model"
 work_dir = "gen"
-clean_out_dir = true
+clean_artifacts = true
 commands = [
     "./generate-bindings"
 ]
 artifacts = [
-    "*.py",
-    "*.pyi",
+    "__init__.py",
+    "bindings/**",
 ]
