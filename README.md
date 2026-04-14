@@ -13,16 +13,18 @@ higher level approach, please see the
 [SPDX Python Tools](https://github.com/spdx/tools-python) (however this repo
 doesn't yet support SPDX 3)
 
-## Installation (PyPi)
+## Installation
+
+### Install from PyPI
 
 ```shell
 python3 -m pip install spdx-python-model
 ```
 
-## Installation (Git)
+### Install from Git
 
 If you would like to pull the bindings directly from Git instead of using a
-released version from PyPi, the following command can be used:
+released version from PyPI, the following command can be used:
 
 ```shell
 python3 -m pip install git+https://github.com/spdx/spdx-python-model.git@main
@@ -30,6 +32,23 @@ python3 -m pip install git+https://github.com/spdx/spdx-python-model.git@main
 
 Note that this will pull the latest version from the `main` branch. If you want
 a specific commit, replace `main` with the git commit SHA
+
+### Install using local SPDX model files
+
+Set the `SHACL2CODE_SPDX_DIR` environment variable to a local directory to
+bypass network downloads during builds.
+The directory must follow this structure:
+
+```text
+<SHACL2CODE_SPDX_DIR>/
+└── v[VERSION]/
+    ├── spdx-context.jsonld
+    ├── spdx-json-serialize-annotations.ttl
+    └── spdx-model.ttl
+```
+
+Useful for pre-release versions lacking official URLs and
+for testing new SPDX models.
 
 ## Usage
 
@@ -78,4 +97,4 @@ make a new release in GitHub with the name `v` + *VERSION*, where *VERSION*
 matches the version number specified in `version.py` (e.g. `v1.0.0`).
 
 After this, GitHub actions will do the rest to build the package and publish it
-to PyPi
+to PyPI.
