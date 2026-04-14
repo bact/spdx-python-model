@@ -33,10 +33,15 @@ python3 -m pip install git+https://github.com/spdx/spdx-python-model.git@main
 Note that this will pull the latest version from the `main` branch. If you want
 a specific commit, replace `main` with the git commit SHA
 
-### Install using local SPDX model files
+### Install/build using local SPDX model files
 
-To build using local SPDX model files instead of downloading them from
-<https://spdx.org>:
+Using local SPDX model files is ideal for testing pre-release versions
+or when official URLs are not yet live.
+
+It is also required for build systems that prohibit network access during
+packaging, such as Debian or Yocto.
+
+To build using local model files:
 
 1) Clone the repository:
 
@@ -45,33 +50,51 @@ To build using local SPDX model files instead of downloading them from
     cd spdx-python-model
     ```
 
-2) Set the model directory:
+2) Download model files:
 
-   Point `SHACL2CODE_SPDX_DIR` to your local files to bypass network downloads
-   during builds.
+    Run the following commands to download the necessary files
+    for a specific SPDX version and keep it in a local directory:
 
-   ```shell
-   export SHACL2CODE_SPDX_DIR=/path/to/models
-   ```
+    ```shell
+    mkdir -p ~/spdx_models/v3.0.1
+    cd ~/spdx_models/v3.0.1
+    wget https://spdx.org/rdf/3.0.1/spdx-context.jsonld
+    wget https://spdx.org/rdf/3.0.1/spdx-json-serialize-annotations.ttl
+    wget https://spdx.org/rdf/3.0.1/spdx-model.ttl
+    ```
 
-3) Install:
+    Or use your own model files.
+
+    The local directory must be organized by SPDX version,
+    with specific file names.
+
+    ```text
+    <SHACL2CODE_SPDX_DIR>/
+    └── v[VERSION]/
+        ├── spdx-context.jsonld
+        ├── spdx-json-serialize-annotations.ttl
+        └── spdx-model.ttl
+    ```
+
+3) Set the model directory:
+
+    Point `SHACL2CODE_SPDX_DIR` environment variable to that local directory.
+
+    ```shell
+    export SHACL2CODE_SPDX_DIR=~/spdx_models
+    ```
+
+4) Install/build:
 
     ```shell
     python3 -m pip install .
     ```
 
-The local directory must be organized by SPDX version:
+    or
 
-```text
-/path/to/models/
-└── v[VERSION]/
-    ├── spdx-context.jsonld
-    ├── spdx-json-serialize-annotations.ttl
-    └── spdx-model.ttl
-```
-
-This is ideal for testing new models or pre-release versions where official
-URLs are not yet live.
+    ```shell
+    python3 -m build
+    ```
 
 ## Usage
 
