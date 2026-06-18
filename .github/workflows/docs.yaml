@@ -39,7 +39,9 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: pip install .
+        run: pip install -e .
+        # Use editable install (-e) to include the generated binding submodules
+        # into the source tree so pdoc can see it.
 
       - name: Install pdoc
         run: pip install pdoc
