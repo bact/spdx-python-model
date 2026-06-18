@@ -1,9 +1,6 @@
 # SPDX-FileType: SOURCE
 # SPDX-License-Identifier: Apache-2.0
-#
 """
-SPDX 3 model.
-
 .. include:: ../../README.md
    :end-before: Testing
 """
