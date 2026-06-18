@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     # No imported during runtime.
     from .bindings._reexport import *  # noqa: F403
 
-__all__ = ["LoadError", "VERSION", "__version__", "load", "load_data"]
+__all__ = ["LoadError", "VERSION", "__version__", "load", "load_data", "bindings"]
 
 # Version submodule names accepted by __getattr__ for top-level import.
 _VERSION_MODULES = frozenset(_CONTEXT_TABLE.values())
