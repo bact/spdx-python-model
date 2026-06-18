@@ -5,6 +5,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'README.md'
+      - '.github/workflows/docs.yaml'
+      - 'pyproject.toml'
+      - 'gen/**'
+      - 'docs/**'
   release:
     types: [published]
   workflow_dispatch:
@@ -22,12 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.14"
 
@@ -51,23 +58,47 @@ jobs:
         env:
           VERSION: ${{ env.VERSION }}
         run: |
-          pdoc src/spdx_python_model -o docs
+          # Generate a list of all generated binding modules to pass to pdoc
+          python - <<'PY' > docs_modules.txt
+          import pkgutil
+          from pathlib import Path
+
+          bindings_dir = Path("src/spdx_python_model/bindings")
+          modules = [
+              f"spdx_python_model.bindings.{name}"
+              for _, name, ispkg in pkgutil.iter_modules([str(bindings_dir)])
+              if ispkg
+          ]
+          if not modules:
+              raise SystemExit("No generated binding modules found")
+
+          print("\n".join(modules))
+          PY
+
+          pdoc src/spdx_python_model $(cat docs_modules.txt) -o docs
+
           # Copy files to versioned/dev directory
           mkdir -p "pages/${{ env.VERSION }}"
           cp -r docs/* "pages/${{ env.VERSION }}/"
-          # Create an index.html to redirect to the dev docs
-          if [[ "${{ env.VERSION }}" == "dev" ]]; then
-            echo '<meta http-equiv="refresh" content="0; url=dev/" />' > pages/index.html
+
+          # Publish a latest alias for the latest release docs.
+          if [[ "${{ env.VERSION }}" != "dev" ]]; then
+            rm -rf pages/latest
+            mkdir -p pages/latest
+            cp -r docs/* pages/latest/
           fi
 
+          # Create an index.html to redirect to the latest release docs.
+          echo '<meta http-equiv="refresh" content="0; url=latest/" />' > pages/index.html
+
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: pages
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
