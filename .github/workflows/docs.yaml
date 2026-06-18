@@ -57,27 +57,25 @@ jobs:
           fi
 
       - name: Build docs
-        env:
-          VERSION: ${{ env.VERSION }}
         run: |
-          pdoc spdx_python_model -o docs
+          VERSION="${{ env.VERSION }}"
+          OUT="pages/docs/$VERSION"
 
-          # Copy files to versioned/dev directory
-          mkdir -p "pages/${{ env.VERSION }}"
-          cp -r docs/* "pages/${{ env.VERSION }}/"
+          # Build API docs directly into the versioned output directory.
+          pdoc spdx_python_model \
+            --logo "https://raw.githubusercontent.com/spdx/outreach/main/assets/SPDX_Logo/svg/SPDX%20logo%20color.svg" \
+            --logo-link "https://github.com/spdx/spdx-python-model" \
+            --footer-text "spdx-python-model $VERSION" \
+            -o "$OUT"
 
-          # Publish a latest alias for the latest release docs.
-          if [[ "${{ env.VERSION }}" != "dev" ]]; then
-            rm -rf pages/latest
-            mkdir -p pages/latest
-            cp -r docs/* pages/latest/
-          elif [[ ! -d pages/latest ]]; then
-            mkdir -p pages/latest
-            cp -r docs/* pages/latest/
+          # For releases, also publish as "latest".
+          if [[ "$VERSION" != "dev" ]]; then
+            rm -rf pages/docs/latest
+            cp -r "$OUT" pages/docs/latest
           fi
 
-          # Create an index.html to redirect to the latest release docs.
-          echo '<meta http-equiv="refresh" content="0; url=latest/" />' > pages/index.html
+          # Root index.html redirects to docs/latest/.
+          echo '<meta http-equiv="refresh" content="0; url=docs/latest/" />' > pages/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
