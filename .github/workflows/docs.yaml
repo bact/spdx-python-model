@@ -1,5 +1,5 @@
 ---
-name: Publish API documentation to GitHub Pages
+name: Publish API docs
 
 on:
   push:
@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies
         run: pip install -e .
         # Use editable install (-e) to include the generated binding submodules
-        # into the source tree so pdoc can see it.
+        # into the source tree so pdoc can see them.
 
       - name: Install pdoc
         run: pip install pdoc
