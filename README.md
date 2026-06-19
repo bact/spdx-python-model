@@ -1,4 +1,4 @@
-# spdx-python-model
+# SPDX Python Model
 
 Generated Python code for [SPDX specification version 3][spdx-spec].
 
@@ -45,58 +45,58 @@ packaging, such as Debian or Yocto.
 
 To build using local model files:
 
-1) Clone the repository:
+1. Clone the repository:
 
-    ```shell
-    git clone https://github.com/spdx/spdx-python-model.git
-    cd spdx-python-model
-    ```
+   ```shell
+   git clone https://github.com/spdx/spdx-python-model.git
+   cd spdx-python-model
+   ```
 
-2) Download model files:
+2. Download model files:
 
-    Run the following commands to download the necessary files
-    for a specific SPDX version and keep it in a local directory:
+   Run the following commands to download the necessary files
+   for a specific SPDX version and keep it in a local directory:
 
-    ```shell
-    mkdir -p ~/spdx_models/v3.0.1
-    cd ~/spdx_models/v3.0.1
-    wget https://spdx.org/rdf/3.0.1/spdx-context.jsonld
-    wget https://spdx.org/rdf/3.0.1/spdx-json-serialize-annotations.ttl
-    wget https://spdx.org/rdf/3.0.1/spdx-model.ttl
-    ```
+   ```shell
+   mkdir -p ~/spdx_models/v3.0.1
+   cd ~/spdx_models/v3.0.1
+   wget https://spdx.org/rdf/3.0.1/spdx-context.jsonld
+   wget https://spdx.org/rdf/3.0.1/spdx-json-serialize-annotations.ttl
+   wget https://spdx.org/rdf/3.0.1/spdx-model.ttl
+   ```
 
-    Or use your own model files.
+   Or use your own model files.
 
-    The local directory must be organized by SPDX version,
-    with specific file names.
+   The local directory must be organized by SPDX version,
+   with specific file names.
 
-    ```text
-    <SHACL2CODE_SPDX_DIR>/
-    └── v[VERSION]/
-        ├── spdx-context.jsonld
-        ├── spdx-json-serialize-annotations.ttl
-        └── spdx-model.ttl
-    ```
+   ```text
+   <SHACL2CODE_SPDX_DIR>/
+   └── v[VERSION]/
+       ├── spdx-context.jsonld
+       ├── spdx-json-serialize-annotations.ttl
+       └── spdx-model.ttl
+   ```
 
-3) Set the model directory:
+3. Set the model directory:
 
-    Point `SHACL2CODE_SPDX_DIR` environment variable to that local directory.
+   Point `SHACL2CODE_SPDX_DIR` environment variable to that local directory.
 
-    ```shell
-    export SHACL2CODE_SPDX_DIR=~/spdx_models
-    ```
+   ```shell
+   export SHACL2CODE_SPDX_DIR=~/spdx_models
+   ```
 
-4) Install/build:
+4. Install/build:
 
-    ```shell
-    python3 -m pip install .
-    ```
+   ```shell
+   python3 -m pip install .
+   ```
 
-    or
+   or
 
-    ```shell
-    python3 -m build
-    ```
+   ```shell
+   python3 -m build
+   ```
 
 ## Usage
 
