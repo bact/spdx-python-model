@@ -16,13 +16,12 @@ on:
     types: [published]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
   deploy-docs:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -32,6 +31,13 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+
+      - name: Restore existing pages
+        run: |
+          mkdir -p pages
+          if git fetch origin gh-pages 2>/dev/null; then
+            git archive origin/gh-pages | tar -x -C pages/
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -52,14 +58,18 @@ jobs:
           if [[ "${{ github.event_name }}" == "release" ]]; then
             VERSION_RAW="${{ github.event.release.tag_name }}"
             echo "VERSION=${VERSION_RAW#v}" >> $GITHUB_ENV
+            echo "IS_RELEASE=true" >> $GITHUB_ENV
           else
             echo "VERSION=dev" >> $GITHUB_ENV
+            echo "IS_RELEASE=false" >> $GITHUB_ENV
           fi
 
       - name: Build docs
         run: |
           VERSION="${{ env.VERSION }}"
           OUT="pages/docs/$VERSION"
+
+          mkdir -p "$OUT"
 
           # Build API docs directly into the versioned output directory.
           pdoc spdx_python_model \
@@ -68,12 +78,18 @@ jobs:
             --footer-text "spdx-python-model $VERSION" \
             -o "$OUT"
 
-          # Always create docs/latest/ so the root redirect works.
-          # On releases this is the release; on dev builds it is dev.
-          cp -r "$OUT" pages/docs/latest
+          # Update latest/ only on release events.
+          if [[ "${{ env.IS_RELEASE }}" == "true" ]]; then
+            rm -rf pages/docs/latest
+            cp -r "$OUT" pages/docs/latest
+          fi
 
-          # Root index.html redirects to docs/latest/.
-          echo '<meta http-equiv="refresh" content="0; url=docs/latest/" />' > pages/index.html
+          # Root landing page from repo; fallback to redirect if not present.
+          if [[ -f docs/index.html ]]; then
+            cp docs/index.html pages/index.html
+          else
+            echo '<meta http-equiv="refresh" content="0; url=docs/latest/" />' > pages/index.html
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
