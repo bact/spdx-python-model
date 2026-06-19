@@ -74,7 +74,7 @@ jobs:
           # Build API docs directly into the versioned output directory.
           pdoc spdx_python_model \
             --logo "https://raw.githubusercontent.com/spdx/outreach/main/assets/SPDX_Logo/svg/SPDX%20logo%20color.svg" \
-            --logo-link "index.html" \
+            --logo-link "/spdx-python-model/docs/$VERSION/" \
             --footer-text "spdx-python-model $VERSION" \
             -o "$OUT"
 
