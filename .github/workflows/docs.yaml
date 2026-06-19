@@ -68,11 +68,9 @@ jobs:
             --footer-text "spdx-python-model $VERSION" \
             -o "$OUT"
 
-          # For releases, also publish as "latest".
-          if [[ "$VERSION" != "dev" ]]; then
-            rm -rf pages/docs/latest
-            cp -r "$OUT" pages/docs/latest
-          fi
+          # Always create docs/latest/ so the root redirect works.
+          # On releases this is the release; on dev builds it is dev.
+          cp -r "$OUT" pages/docs/latest
 
           # Root index.html redirects to docs/latest/.
           echo '<meta http-equiv="refresh" content="0; url=docs/latest/" />' > pages/index.html
