@@ -9,6 +9,8 @@
 from __future__ import annotations
 
 import ast
+import sys
+import warnings
 from pathlib import Path
 from typing import Optional
 
@@ -101,6 +103,7 @@ def _build_probe(versions: list[str]) -> str:
             f"count(objset_{v})",
             f"count(module_{v}.SHACLObjectSet())",
             f"module_{v}.SHACLObjectSet().add(module_{v}.Person())",
+            f"prerelease_{v}: bool = module_{v}.IS_PRERELEASE",
         ]
         for i, cls in enumerate(_CLASSES):
             lines.append(f"c{i}_{v}: protocols.{cls} = {v}.{cls}()")
@@ -147,11 +150,7 @@ def test_strict_mypy_protocols_satisfied_by_all_versions(tmp_path: Path) -> None
 def test_class_introduced_in_later_version_is_included_from_that_version(
     tmp_path: Path,
 ) -> None:
-    """
-    generate-protocols' earliest-wins merge must include classes that only
-    exist in a later version (not just ones common to every version), and
-    re-export each one specifically from the version that introduces it.
-    """
+    """A class introduced in a later version resolves from that version."""
     from mypy import api
 
     versions = _available_versions()
@@ -218,3 +217,96 @@ def test_loaded_objset_is_usable_through_protocol() -> None:
     assert isinstance(list(objset.foreach()), list)
     assert names(objset) is not None
     assert objset.find_by_id("does-not-exist", None) is None
+
+
+def test_is_prerelease_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    """is_prerelease_version() reflects module.IS_PRERELEASE."""
+    from spdx_python_model import is_prerelease_version
+    from spdx_python_model.bindings import v3_0_1
+
+    monkeypatch.setattr(v3_0_1, "IS_PRERELEASE", False)
+    assert is_prerelease_version(v3_0_1) is False
+
+    monkeypatch.setattr(v3_0_1, "IS_PRERELEASE", True)
+    assert is_prerelease_version(v3_0_1) is True
+
+
+def test_is_prerelease_version_does_not_load_model() -> None:
+    """Reading IS_PRERELEASE must not import model.py."""
+    if "v3_1" not in _available_versions():
+        pytest.skip("v3_1 binding not generated")
+
+    for mod in list(sys.modules):
+        if mod == "spdx_python_model.bindings.v3_1" or mod.startswith(
+            "spdx_python_model.bindings.v3_1."
+        ):
+            del sys.modules[mod]
+
+    from spdx_python_model import is_prerelease_version
+    from spdx_python_model.bindings import v3_1
+
+    is_prerelease_version(v3_1)
+    assert "spdx_python_model.bindings.v3_1.model" not in sys.modules
+
+
+def test_draft_warning_on_version_access(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SPDXDraftWarning fires on spdx_python_model.<version> access iff IS_PRERELEASE."""
+    import spdx_python_model
+    from spdx_python_model import SPDXDraftWarning
+    from spdx_python_model.bindings import v3_0_1
+
+    monkeypatch.setattr(v3_0_1, "IS_PRERELEASE", True)
+    with pytest.warns(SPDXDraftWarning):
+        spdx_python_model.v3_0_1
+
+    monkeypatch.setattr(v3_0_1, "IS_PRERELEASE", False)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", SPDXDraftWarning)
+        spdx_python_model.v3_0_1
+
+
+def test_draft_warning_on_load(monkeypatch: pytest.MonkeyPatch) -> None:
+    """load() raises SPDXDraftWarning iff the document's version is IS_PRERELEASE."""
+    import spdx_python_model
+    from spdx_python_model import SPDXDraftWarning
+    from spdx_python_model.bindings import v3_0_1
+
+    example = DATA_DIR / "3.0.1" / "example.spdx3.json"
+
+    monkeypatch.setattr(v3_0_1, "IS_PRERELEASE", False)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", SPDXDraftWarning)
+        spdx_python_model.load(example)
+
+    monkeypatch.setattr(v3_0_1, "IS_PRERELEASE", True)
+    with pytest.warns(SPDXDraftWarning):
+        spdx_python_model.load(example)
+
+
+def test_draft_warning_attributed_to_caller(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SPDXDraftWarning attributes to the caller for attribute access and load_data()."""
+    import json
+
+    import spdx_python_model
+    from spdx_python_model.bindings import v3_0_1
+
+    monkeypatch.setattr(v3_0_1, "IS_PRERELEASE", True)
+    example = DATA_DIR / "3.0.1" / "example.spdx3.json"
+    data = json.loads(example.read_text())
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        spdx_python_model.v3_0_1
+    assert caught[0].filename == __file__
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        spdx_python_model.load_data(data)
+    assert caught[0].filename == __file__
+
+
+def test_draft_versions_symbol_removed() -> None:
+    """bindings/__init__.py must not define _DRAFT_VERSIONS."""
+    import spdx_python_model.bindings as bindings
+
+    assert not hasattr(bindings, "_DRAFT_VERSIONS")

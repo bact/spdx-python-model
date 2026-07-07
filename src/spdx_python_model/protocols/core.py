@@ -20,6 +20,8 @@ class SpdxModelModule(Protocol):
     classes such as ``Person`` as ``Any``.
     """
 
+    IS_PRERELEASE: bool
+
     # Names mirror the generated factory/class names exactly (PascalCase),
     # not method-naming convention, so the Protocol structurally matches them.
     # pylint: disable=invalid-name,missing-function-docstring

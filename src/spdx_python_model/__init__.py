@@ -11,9 +11,10 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, List, Tuple, cast
 
-from .bindings import _CONTEXT_TABLE, _DRAFT_VERSIONS
+from .bindings import _CONTEXT_TABLE
 from .version import VERSION
-from .version import VERSION as __version__
+
+__version__ = VERSION
 
 if TYPE_CHECKING:
     from .bindings import *  # noqa: F403
@@ -28,6 +29,7 @@ __all__ = [
     "SpdxObjectSet",
     "VERSION",
     "__version__",
+    "is_prerelease_version",
     "load",
     "load_data",
     "protocols",  # lazy submodule via __getattr__ # noqa: F405
@@ -51,8 +53,14 @@ class SPDXDraftWarning(FutureWarning):
     """
 
 
-def _warn_if_draft(module_name: str) -> None:
-    if module_name in _DRAFT_VERSIONS:
+def is_prerelease_version(module: ModuleType) -> bool:
+    """Whether a version submodule's model is marked pre-release."""
+    return bool(getattr(module, "IS_PRERELEASE", False))
+
+
+def _warn_if_draft(module: ModuleType, module_name: str) -> None:
+    # stacklevel=3: points to the caller of __getattr__/load_data.
+    if is_prerelease_version(module):
         warnings.warn(
             f"SPDX bindings '{module_name}' track an in-development draft and "
             "may change without notice.",
@@ -61,9 +69,7 @@ def _warn_if_draft(module_name: str) -> None:
         )
 
 
-# Names served by __getattr__ that don't exist in globals() until first
-# access. Shared with __dir__() so lazy names stay discoverable without
-# forcing the import that makes them lazy in the first place.
+# Lazy names served by __getattr__; also exposed via __dir__.
 _PROTOCOLS_REEXPORTS = frozenset({"SpdxObject", "SpdxObjectSet", "SpdxModelModule"})
 _LAZY_ATTRS = _PROTOCOLS_REEXPORTS | {"protocols"}
 
@@ -71,8 +77,9 @@ _LAZY_ATTRS = _PROTOCOLS_REEXPORTS | {"protocols"}
 def __getattr__(name: str) -> Any:
     """Lazily import a version's bindings or the protocols package (PEP 562)."""
     if name in _VERSION_MODULES:
-        _warn_if_draft(name)
-        return importlib.import_module(f"{__name__}.bindings.{name}")
+        module = importlib.import_module(f"{__name__}.bindings.{name}")
+        _warn_if_draft(module, name)
+        return module
     if name == "protocols":
         return importlib.import_module(f"{__name__}.protocols")
     if name in _PROTOCOLS_REEXPORTS:
@@ -100,7 +107,6 @@ def load_data(data: Any) -> Tuple[ModuleType, "SpdxObjectSet"]:
         not recognized
     :raises TypeError: If the data is not a dictionary
     """
-
     if not isinstance(data, dict):
         raise TypeError("Data must be a dictionary")
 
@@ -125,8 +131,8 @@ def load_data(data: Any) -> Tuple[ModuleType, "SpdxObjectSet"]:
     if module_name is None:
         raise LoadError(f"Unknown context URL '{context_url}'")
 
-    _warn_if_draft(module_name)
     model = importlib.import_module(f"{__name__}.bindings.{module_name}")
+    _warn_if_draft(model, module_name)
 
     d = model.JSONLDDeserializer()
     objset = model.SHACLObjectSet()
