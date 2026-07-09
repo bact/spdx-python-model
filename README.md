@@ -170,3 +170,11 @@ matches the version number specified in `version.py` (e.g. `v1.0.0`).
 
 After this, GitHub actions will do the rest to build the package and publish it
 to PyPI.
+
+## Other language bindings
+
+Bindings for other languages include:
+
+- [spdx-cpp-model] - for C++
+
+[spdx-cpp-model]: https://github.com/spdx/spdx-cpp-model
